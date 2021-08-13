@@ -13,7 +13,7 @@ var testSchema1 = `{ "type": "record",
     {"name": "manager", "type": "string"},
     {"name": "team_name", "type": "string"},
     {"name": "ownerOfTeam", "type": "string"},
-    {"name": "kind-of-sport", "type": "string"},
+    {"name": "kind_of_sport", "type": "string"},
     {"name": "uri", "type": "string"},
     {"name": "has_changed_name", "type": "boolean"},
     {"name": "number_of_players", "type": "int"}
@@ -37,7 +37,7 @@ var testSchema3 = `{ "type": "record",
  "namespace": "valid",
  "fields": [
       {"name": "manager", "type": "string"},
-      {"name": "winning_years","type":["null",{"type":"array","items":"string"}]},
+      {"name": "winning_years", "type": { "type":"array", "items":"string", "default": [] }},
       {"name": "teamName", "type": "string"},
       {"name": "owner", "type": "string"},
       {"name": "sport", "type": "string"},
@@ -111,7 +111,7 @@ var testOptionalSchema = `{
  "name": "example1",
  "namespace": "correct",
  "fields": [
-    {"name": "manager", "type": ["null", "string"]},
+    {"name": "manager", "type": ["null", "string"], "default": null},
     {"name": "team_name", "type": "string"},
     {"name": "owner", "type": "string"},
     {"name": "sport", "type": "string"},
@@ -124,7 +124,7 @@ type testData1 struct {
 	Manager         string   `avro:"manager"`
 	TeamName        string   `avro:"team_name"`
 	Owner           string   `avro:"ownerOfTeam"`
-	Sport           string   `avro:"kind-of-sport"`
+	Sport           string   `avro:"kind_of_sport"`
 	URI             string   `avro:"uri"`
 	Players         []string `avro:"players"`
 	PlayerOfTheYear string   `avro:"-" json:"player_of_the_year"`
@@ -164,7 +164,7 @@ type testData4 struct {
 
 type testOptionalData struct {
 	Manager         string `avro:"manager,omitempty"`
-	TeamName        string `avro:"team_name,omitempty"`
+	TeamName        string `avro:"team_name"`
 	Owner           string `avro:"owner"`
 	Sport           string `avro:"sport"`
 	AreGood         bool   `avro:"are_good"`
@@ -221,7 +221,6 @@ func TestUnitMarshal(t *testing.T) {
 		test := "string"
 		bufferBytes1b, err1b := cs.Marshal(test)
 		So(err1b, ShouldNotBeNil)
-		// So(err1b, ShouldHaveSameTypeAs, ErrUnsupportedType(reflect.ValueOf(test).Kind()))
 		So(bufferBytes1b, ShouldBeNil)
 	})
 
@@ -240,7 +239,6 @@ func TestUnitMarshal(t *testing.T) {
 
 		bufferBytes2, err2 := incs.Marshal(id)
 		So(err2, ShouldNotBeNil)
-		// So(err2, ShouldEqual, ErrUnsupportedFieldType)
 		So(bufferBytes2, ShouldBeNil)
 	})
 
@@ -394,22 +392,6 @@ func TestUnitUnmarshal(t *testing.T) {
 		So(data.Items[0].SubmissionID, ShouldEqual, "5677")
 		So(data.Items[1].SubmissionID, ShouldNotBeEmpty)
 		So(data.Items[1].SubmissionID, ShouldEqual, "three")
-	})
-
-	Convey("Check error return for unsupported interface types", t, func() {
-		message, err := createMessage(testSchema3)
-		So(err, ShouldBeNil)
-
-		cs := &AvroMarshaller{
-			Schema: testSchema3,
-		}
-
-		data := ""
-		// reflectData := reflect.ValueOf(data)
-
-		err1 := cs.Unmarshal(message, data)
-		So(err1, ShouldNotBeNil)
-		// So(err1, ShouldResemble, ErrUnsupportedType(reflectData.Kind()))
 	})
 }
 

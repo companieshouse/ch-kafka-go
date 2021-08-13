@@ -3,10 +3,9 @@
 package avro
 
 import (
-	"bytes"
 	"fmt"
 
-	"github.com/elodina/go-avro"
+	"github.com/hamba/avro"
 )
 
 // Marshaller is an interface for marshalling to and from binary using avro
@@ -23,35 +22,30 @@ type AvroMarshaller struct {
 }
 
 func (marshaller *AvroMarshaller) Marshal(model interface{}) ([]byte, error) {
-	avroSchema, err := avro.ParseSchema(marshaller.Schema)
+	avroSchema, err := avro.Parse(marshaller.Schema)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing avro schema: %s", err)
 	}
 
-	writer := avro.NewSpecificDatumWriter()
-	writer.SetSchema(avroSchema)
+	data, err := avro.Marshal(avroSchema, model)
 
-	buffer := new(bytes.Buffer)
-	encoder := avro.NewBinaryEncoder(buffer)
-
-	err = writer.Write(model, encoder)
 	if err != nil {
 		return nil, fmt.Errorf("error writing avro schema: %s", err)
 	}
 
-	return buffer.Bytes(), nil
+	return data, nil
 }
 
 func (marshaller *AvroMarshaller) Unmarshal(data []byte, model interface{}) error {
-	avroSchema, err := avro.ParseSchema(marshaller.Schema)
+	avroSchema, err := avro.Parse(marshaller.Schema)
 	if err != nil {
 		return fmt.Errorf("error parsing avro schema: %s", err)
 	}
 
-	reader := avro.NewSpecificDatumReader()
-	reader.SetSchema(avroSchema)
+	err = avro.Unmarshal(avroSchema, data, &model)
+	if err != nil {
+		return fmt.Errorf("error reading avro schema: %s", err)
+	}
 
-	decoder := avro.NewBinaryDecoder(data)
-
-	return reader.Read(model, decoder)
+	return nil
 }
