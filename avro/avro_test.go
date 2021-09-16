@@ -192,11 +192,11 @@ type Item struct {
 
 func TestUnitMarshal(t *testing.T) {
 	Convey("Correctly marshal avro to byte array", t, func() {
-		cs := &AvroMarshaller{
+		marshaller := &AvroMarshaller{
 			Schema: testSchema1,
 		}
 
-		cd := &testData1{
+		data := &testData1{
 			Manager:         "Pardew, Alan",
 			TeamName:        "Crystal Palace FC",
 			Owner:           "Long, Martin",
@@ -208,28 +208,28 @@ func TestUnitMarshal(t *testing.T) {
 			NumberOfPlayers: int32(11),
 		}
 
-		bufferBytes1, err1 := cs.Marshal(cd)
-		So(err1, ShouldBeNil)
-		So(bufferBytes1, ShouldNotBeNil)
+		bytes, err := marshaller.Marshal(data)
+		So(err, ShouldBeNil)
+		So(bytes, ShouldNotBeNil)
 	})
 
 	Convey("Marshal should return an error unless given a pointer to a struct", t, func() {
-		cs := &AvroMarshaller{
+		marshaller := &AvroMarshaller{
 			Schema: testSchema1,
 		}
 
-		test := "string"
-		bufferBytes1b, err1b := cs.Marshal(test)
-		So(err1b, ShouldNotBeNil)
-		So(bufferBytes1b, ShouldBeNil)
+		data := "string"
+		bytes, err := marshaller.Marshal(data)
+		So(err, ShouldNotBeNil)
+		So(bytes, ShouldBeNil)
 	})
 
 	Convey("Marshal should return an error if field is not of type string", t, func() {
-		incs := &AvroMarshaller{
+		marshaller := &AvroMarshaller{
 			Schema: testSchema2,
 		}
 
-		id := &testData2{
+		data := &testData2{
 			Manager:  "Pardew, Alan",
 			TeamName: "Crystal Palace FC",
 			Owner:    "Long, Martin",
@@ -237,30 +237,30 @@ func TestUnitMarshal(t *testing.T) {
 			Goals:    int64(10),
 		}
 
-		bufferBytes2, err2 := incs.Marshal(id)
-		So(err2, ShouldNotBeNil)
-		So(bufferBytes2, ShouldBeNil)
+		bytes, err := marshaller.Marshal(data)
+		So(err, ShouldNotBeNil)
+		So(bytes, ShouldBeNil)
 	})
 
 	Convey("Successfully marshal a nested schema", t, func() {
-		nest := &AvroMarshaller{Schema: testNestedSchema}
+		marshaller := &AvroMarshaller{Schema: testNestedSchema}
 
-		nestStruct := TestParent{
+		data := TestParent{
 			TransactionURL: "/transaction/1389y4937493/accounts/68736438764/abridged",
 			Presenter: TestChild{
 				Email: "test1@wsdkjdb.com",
 			},
 		}
 
-		bytes, err := nest.Marshal(nestStruct)
+		bytes, err := marshaller.Marshal(data)
 		So(bytes, ShouldNotBeEmpty)
 		So(err, ShouldBeNil)
 	})
 
 	Convey("Successfully marshal a nested array schema", t, func() {
-		nest := &AvroMarshaller{Schema: testNestedArraySchema}
+		marshaller := &AvroMarshaller{Schema: testNestedArraySchema}
 
-		nestStruct := FilingReceived{
+		data := FilingReceived{
 			ApplicationID: "1234",
 			ChannelID:     "3456",
 			Items: []Item{
@@ -273,17 +273,17 @@ func TestUnitMarshal(t *testing.T) {
 			},
 		}
 
-		bytes, err := nest.Marshal(nestStruct)
+		bytes, err := marshaller.Marshal(data)
 		So(err, ShouldBeNil)
 		So(bytes, ShouldNotBeEmpty)
 	})
 
 	Convey("Correctly marshal avro to byte array with omitempty tag value", t, func() {
-		cs := &AvroMarshaller{
+		marshaller := &AvroMarshaller{
 			Schema: testOptionalSchema,
 		}
 
-		cd := &testOptionalData{
+		data := &testOptionalData{
 			Manager:         "",
 			TeamName:        "Crystal Palace FC",
 			Owner:           "Long, Martin",
@@ -292,9 +292,9 @@ func TestUnitMarshal(t *testing.T) {
 			NumberOfPlayers: int32(11),
 		}
 
-		bufferBytes1, err1 := cs.Marshal(cd)
-		So(err1, ShouldBeNil)
-		So(bufferBytes1, ShouldNotBeNil)
+		bytes, err := marshaller.Marshal(data)
+		So(err, ShouldBeNil)
+		So(bytes, ShouldNotBeNil)
 	})
 }
 
@@ -303,14 +303,14 @@ func TestUnitUnmarshal(t *testing.T) {
 		message, err := createMessage(testSchema3)
 		So(err, ShouldBeNil)
 
-		cs := &AvroMarshaller{
+		marshaller := &AvroMarshaller{
 			Schema: testSchema3,
 		}
 
 		var data testData4
 
-		err1 := cs.Unmarshal(message, &data)
-		So(err1, ShouldBeNil)
+		err = marshaller.Unmarshal(message, &data)
+		So(err, ShouldBeNil)
 		So(data.Manager, ShouldNotBeNil)
 		So(data.Manager, ShouldEqual, "John Elway")
 		So(data.TeamName, ShouldNotBeNil)
@@ -331,14 +331,14 @@ func TestUnitUnmarshal(t *testing.T) {
 		message, err := createOptionalMessage(testOptionalSchema, "")
 		So(err, ShouldBeNil)
 
-		cs := &AvroMarshaller{
+		marshaller := &AvroMarshaller{
 			Schema: testOptionalSchema,
 		}
 
 		var data testOptionalData
 
-		err1 := cs.Unmarshal(message, &data)
-		So(err1, ShouldBeNil)
+		err = marshaller.Unmarshal(message, &data)
+		So(err, ShouldBeNil)
 		So(data.Manager, ShouldBeEmpty)
 		So(data.TeamName, ShouldNotBeNil)
 		So(data.TeamName, ShouldEqual, "Crystal Palace FC")
@@ -356,13 +356,13 @@ func TestUnitUnmarshal(t *testing.T) {
 		message, err := createNestedMessage(testNestedSchema)
 		So(err, ShouldBeNil)
 
-		cs := &AvroMarshaller{
+		marshaller := &AvroMarshaller{
 			Schema: testNestedSchema,
 		}
 
 		var data TestParent
 
-		err = cs.Unmarshal(message, &data)
+		err = marshaller.Unmarshal(message, &data)
 		So(err, ShouldBeNil)
 		So(data.TransactionURL, ShouldNotBeEmpty)
 		So(data.TransactionURL, ShouldEqual, "/1234/transactions")
@@ -375,13 +375,13 @@ func TestUnitUnmarshal(t *testing.T) {
 		message, err := createNestedArrayMessage(testNestedArraySchema)
 		So(err, ShouldBeNil)
 
-		cs := &AvroMarshaller{
+		marshaller := &AvroMarshaller{
 			Schema: testNestedArraySchema,
 		}
 
 		var data FilingReceived
 
-		err = cs.Unmarshal(message, &data)
+		err = marshaller.Unmarshal(message, &data)
 		So(err, ShouldBeNil)
 		So(data.ApplicationID, ShouldNotBeEmpty)
 		So(data.ApplicationID, ShouldEqual, "1234")
@@ -396,7 +396,7 @@ func TestUnitUnmarshal(t *testing.T) {
 }
 
 func createMessage(schema string) ([]byte, error) {
-	marshalSchema := &AvroMarshaller{
+	marshaller := &AvroMarshaller{
 		Schema: schema,
 	}
 
@@ -411,7 +411,7 @@ func createMessage(schema string) ([]byte, error) {
 		NumberOfPlayers: 11,
 	}
 
-	message, err := marshalSchema.Marshal(data)
+	message, err := marshaller.Marshal(data)
 	if err != nil {
 		return nil, err
 	}
@@ -420,11 +420,11 @@ func createMessage(schema string) ([]byte, error) {
 }
 
 func createOptionalMessage(schema string, manager string) ([]byte, error) {
-	marshalSchema := &AvroMarshaller{
+	marshaller := &AvroMarshaller{
 		Schema: schema,
 	}
 
-	cd := &testOptionalData{
+	data := &testOptionalData{
 		Manager:         manager,
 		TeamName:        "Crystal Palace FC",
 		Owner:           "Long, Martin",
@@ -433,7 +433,7 @@ func createOptionalMessage(schema string, manager string) ([]byte, error) {
 		NumberOfPlayers: int32(11),
 	}
 
-	message, err := marshalSchema.Marshal(cd)
+	message, err := marshaller.Marshal(data)
 	if err != nil {
 		return nil, err
 	}
@@ -442,7 +442,7 @@ func createOptionalMessage(schema string, manager string) ([]byte, error) {
 }
 
 func createNestedMessage(schema string) ([]byte, error) {
-	marshalSchema := &AvroMarshaller{
+	marshaller := &AvroMarshaller{
 		Schema: schema,
 	}
 
@@ -453,7 +453,7 @@ func createNestedMessage(schema string) ([]byte, error) {
 		},
 	}
 
-	message, err := marshalSchema.Marshal(data)
+	message, err := marshaller.Marshal(data)
 	if err != nil {
 		return nil, err
 	}
@@ -462,7 +462,7 @@ func createNestedMessage(schema string) ([]byte, error) {
 }
 
 func createNestedArrayMessage(schema string) ([]byte, error) {
-	marshalSchema := &AvroMarshaller{
+	marshaller := &AvroMarshaller{
 		Schema: schema,
 	}
 
@@ -479,7 +479,7 @@ func createNestedArrayMessage(schema string) ([]byte, error) {
 		},
 	}
 
-	message, err := marshalSchema.Marshal(data)
+	message, err := marshaller.Marshal(data)
 	if err != nil {
 		return nil, err
 	}
