@@ -1,5 +1,3 @@
-// Package avro provides a user functionality to return the
-// avro encoding of s.
 package avro
 
 import (
@@ -8,7 +6,7 @@ import (
 	"github.com/hamba/avro"
 )
 
-// Marshaller is an interface for marshalling to and from binary using avro
+// Marshaller is an interface for marshalling to and from binary encoding bytes using avro
 type Marshaller interface {
 	// Marshal is a function to encode a model into binary data using avro
 	Marshal(model interface{}) ([]byte, error)
@@ -28,9 +26,8 @@ func (marshaller *AvroMarshaller) Marshal(model interface{}) ([]byte, error) {
 	}
 
 	data, err := avro.Marshal(avroSchema, model)
-
 	if err != nil {
-		return nil, fmt.Errorf("error writing avro schema: %s", err)
+		return nil, fmt.Errorf("error marshalling model using Avro schema: %s", err)
 	}
 
 	return data, nil
@@ -44,7 +41,7 @@ func (marshaller *AvroMarshaller) Unmarshal(data []byte, model interface{}) erro
 
 	err = avro.Unmarshal(avroSchema, data, &model)
 	if err != nil {
-		return fmt.Errorf("error reading avro schema: %s", err)
+		return fmt.Errorf("error unmarshalling into model using Avro schema: %s", err)
 	}
 
 	return nil
